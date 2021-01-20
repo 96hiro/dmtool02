@@ -5,6 +5,7 @@ import datetime
 import pandas as pd
 import numpy as np
 from logger import set_logger
+import sys
 ####ログイン処理で使用###############################################
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -59,7 +60,7 @@ def main():
         logger.info("ログイン成功")
     
         #送信設定(Send_Config.csv)を一件ずつ取得する
-        df = pd.read_csv('./Send_Config.csv')
+        df = pd.read_csv('./Send_Config.csv', encoding="utf-8_sig")
         #Pandas空白/空文字列でNaNを置き換える
         df = df.replace(np.nan, '', regex=True)
    
@@ -228,9 +229,9 @@ def write_cvs(history,Date＿Time):
     #ファイル存在チェック
     if os.path.isfile('./Send_History.csv'):
        
-        df.to_csv('./Send_History.csv', mode='a', header=False, index=True)
+        df.to_csv('./Send_History.csv', encoding="utf-8_sig", mode='a', header=False, index=True)
     else:
-        df.to_csv('./Send_History.csv', mode='a', header=True, index=True)
+        df.to_csv('./Send_History.csv', encoding="utf-8_sig", mode='a', header=True, index=True)
 
 
 #送信履歴管理CSVのインデックス番号を0から連番で振り直す関数
@@ -239,12 +240,12 @@ def write_cvs(history,Date＿Time):
 def csv_Sorting():
 
     #Send_History.csvのindex番号を整頓する
-    df = pd.read_csv('./Send_History.csv', index_col=0)
+    df = pd.read_csv('./Send_History.csv', encoding="utf-8_sig", index_col=0)
     #行数を取得
     # print(len(df))
     #Send_History.csvのインデックス番号を振り直す
     df=df.reset_index(drop=True)
-    df.to_csv('./Send_History.csv')
+    df.to_csv('./Send_History.csv', encoding="utf-8_sig")
 
 #以前にDMを送信したクライアントかをチェックする関数
     
@@ -253,7 +254,7 @@ def Search_History(target_name):
     #ファイル存在確認
     if os.path.isfile('./Send_History.csv'):  
         #CSVの情報を一見ずつ取得する
-        df = pd.read_csv('./Send_History.csv')
+        df = pd.read_csv('./Send_History.csv', encoding="utf-8_sig")
     
         for i in range(len(df)):
 
@@ -266,18 +267,35 @@ def Search_History(target_name):
 #ログイン処理を行う関数
 
 
-@retry(tries=3, delay=5)
+# @retry(tries=3, delay=5)
 def login(driver):
 
+    
     # Webサイトを開く
     driver.get("https://www.lancers.jp/user/login")
     logger.info("ログインページの表示成功")
-
     logger.info("ログイン処理開始")
-    print("ランサーズへのログイン情報を入力してください")
-    #入力処理
-    user_id = input("メールアドレス：")
-    pass_word = input("パスワード：")
+
+    #ログイン情報(Login_Info.csv)のデータを取得
+    df1 = pd.read_csv('./Login_Info.csv', encoding="utf-8_sig")
+
+    #Pandas空白/空文字列でNaNを置き換える
+    df1 = df1.replace(np.nan, '', regex=True)
+
+    user_id = df1["ログインID"]
+    pass_word = df1["パスワード"]
+
+
+    #ログイン情報ファイル設定値チェック
+    if len(df1) == 0:
+        logger.info("ログイン情報が設定されていません。")
+        sys.exit()
+    elif user_id[0] == "":
+        logger.info("ログインIDが設定されていません。")
+        sys.exit()
+    elif pass_word[0] == "":
+        logger.info("ログインパスワードが設定されていません。")
+        sys.exit()
 
     #入力されたログイン情報をサイトへ書き込む
     driver.find_element_by_id(
@@ -287,12 +305,14 @@ def login(driver):
     #ログインボタンをクリック
     driver.find_element_by_id("form_submit").click()
     time.sleep(1)
-    # サイドバーに[マイページ]のリングが表示されたらログイン成功
-    WebDriverWait(driver, 5).until(
-        EC.text_to_be_present_in_element((By.CSS_SELECTOR, '.dashboard-menu'), 'マイページ')
-    )
-    
-
+    try:
+        # サイドバーに[マイページ]のリングが表示されたらログイン成功
+        WebDriverWait(driver, 5).until(
+            EC.text_to_be_present_in_element((By.CSS_SELECTOR, '.dashboard-menu'), 'マイページ')
+        )
+    except:
+        logger.info("ログインに失敗しました。ログイン情報を確認してください。")
+        sys.exit()
 #直接起動された場合はmain()を起動(モジュールとして呼び出された場合は起動しないようにするため)
 if __name__ == "__main__":
     main()
