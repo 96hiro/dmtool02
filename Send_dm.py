@@ -90,7 +90,14 @@ def main():
             elif Sentence == "":
                 logger.info("指定送信メッセージの設定されていませんでした。")
                 continue
-            
+            Sentence_spt = []
+            #メッセージ文を改行コードで分割し、リストへ格納する
+            Sentence_spt = Sentence.split('\\n')
+            for line in range(len(Sentence_spt)):
+                Sentence_spt[line] += '\n'
+                
+            # print(Sentence_spt)
+
             #CSVで指定のURL先を開く
             driver.get(URL)
             time.sleep(2)
@@ -143,7 +150,7 @@ def main():
                             #メッセージ入力欄の文字を削除
                             driver.find_element_by_css_selector(".css-1eqtq1t").clear()
                             #文章を入力
-                            driver.find_element_by_css_selector(".css-1eqtq1t").send_keys(Sentence)
+                            driver.find_element_by_css_selector(".css-1eqtq1t").send_keys(Sentence_spt)
                             time.sleep(2)
                             #送信ボタンをクリック
                             driver.find_element_by_css_selector(".css-1k6q35j").click()
@@ -162,7 +169,7 @@ def main():
                         #メッセージ入力欄の文字を削除
                         driver.find_element_by_css_selector(".css-1eqtq1t").clear()
                         #文章を入力
-                        driver.find_element_by_css_selector(".css-1eqtq1t").send_keys(Sentence)
+                        driver.find_element_by_css_selector(".css-1eqtq1t").send_keys(Sentence_spt)
                         time.sleep(2)
                         #送信ボタンをクリック
                         driver.find_element_by_css_selector(".css-1k6q35j").click()
